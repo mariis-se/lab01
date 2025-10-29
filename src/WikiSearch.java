@@ -2,7 +2,18 @@ import java.util.Scanner;
 import java.io.IOError;
 import java.util.IllegalFormatException;
 
+import java.net.http.HttpClient;
+import java.net.http.HttpRequest;
+import java.net.http.HttpResponse;
+import java.net.URI;
+
+
 public class WikiSearch {
+
+    private static final String wikiApi_URL = "https://ru.wikipedia.org/w/api.php";
+    private static final int timeout = 15;
+
+
     public static void main(String[] s){
         Scanner scanner = new Scanner(System.in);
         String search = "";
@@ -30,5 +41,9 @@ public class WikiSearch {
 //        }
 
     }
+
+
+
+
 
 }
