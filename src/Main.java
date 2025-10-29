@@ -4,7 +4,7 @@ void main() {
 
     IO.println(String.format("Hello and welcome!"));
     //spdfk
-    for (int i = 1; i <= 5; i++) { //sdf
+    for (int i = 1; i <= 5; i++) { //sdfasdf
 
         IO.println("i = " + i);
     }
