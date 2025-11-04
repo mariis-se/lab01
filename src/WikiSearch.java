@@ -13,11 +13,21 @@ import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.net.URI;
 
+import com.google.gson.Gson;
+import com.google.gson.JsonArray;
+import com.google.gson.JsonObject;
+import com.google.gson.JsonElement;
+import com.google.gson.JsonSyntaxException;
+
+import java.util.IllegalFormatException;
+import java.io.UnsupportedEncodingException;
 
 public class WikiSearch {
 
     private static final String wikiApi_URL = "https://ru.wikipedia.org/w/api.php";
     private static final int timeout = 15;
+
+    private static final Gson gson = new Gson();
 
 
     public static void main(String[] s){
@@ -25,6 +35,7 @@ public class WikiSearch {
         //String search = "";
         while(true) {
             try {
+                System.out.print("Для завершения работы программы ввелите 0 ");
                 System.out.print("Введите поисковой запрос: ");
                 String search = scanner.nextLine();
 
@@ -66,7 +77,13 @@ public class WikiSearch {
     private static String fetchSearch(String search) {
         try{ // кодируем запрос для дальнейшей передачи в url
             String searchURL = URLEncoder.encode(search, StandardCharsets.UTF_8);
-            String url = wikiApi_URL +  "?action=query&list=search&utf8=&format=json&srsearch=" + searchURL + "&srlimit=10";
+            String url = wikiApi_URL +
+                    "?action=query" +
+                    "&list=search" +
+                    "&utf8=1" +
+                    "&format=json" +
+                    "&srsearch=" + searchURL +
+                    "&srlimit=10"; //ограничение по кол результатов 10
             // создаем http клиент с таймаутом
 
             HttpClient client = HttpClient.newBuilder()
@@ -78,7 +95,7 @@ public class WikiSearch {
                     .timeout(Duration.ofSeconds(timeout))
                     .GET()
                     .build();
-
+            //отправка запроса , получение ответа
             HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
 
             if (response.statusCode() == 200) {
@@ -97,6 +114,65 @@ public class WikiSearch {
             System.out.println("Неверный URL" + e.getMessage());
         }
         return null;
+    }
+
+    private static void parseAndResult(String jsonResponse){
+        try {
+            // Парсим json в объект JsonObject для удобного доступа к полям
+            JsonObject jsonObject = gson.fromJson(jsonResponse, JsonObject.class);
+
+            if (!jsonObject.has("query")) {
+                System.out.println("No query :(");
+                return;
+            }
+
+            JsonObject query = jsonObject.getAsJsonObject("query");
+
+            if (!query.has("search") || !query.get("search").isJsonArray()) {
+                System.out.println("По вашему запросу ничего не найдено");
+                return;
+            }
+
+            JsonArray searchResults = query.getAsJsonArray("search");
+
+            if (searchResults.isEmpty()) {
+                System.out.println("По вашему запросу ничего не найдено");
+                return;
+            }
+
+            System.out.println("\nНайдено статей: " + searchResults.size());
+
+            for (int i = 0; i < searchResults.size(); i++){
+                JsonObject article = searchResults.get(i).getAsJsonObject();
+
+                String title = article.has("title") ? article.get("title").getAsString() : "Без названия";
+                String snippet = article.has("snippet") ? article.get("snippet").getAsString() : "";
+                int pageId = article.has("pageid") ? article.get("pageid").getAsInt() : -1;
+
+                // очищаем сниппет от HTML тегов для отображения
+                String cleanSnippet = snippet.replaceAll("<[^>]+>", "");
+
+                // обрезка текста
+                if (cleanSnippet.length() > 120) {
+                    cleanSnippet = cleanSnippet.substring(0, 120) + "...";
+                }
+                System.out.println((i + 1) + title);
+                System.out.println((cleanSnippet.isEmpty() ? "Нет описания" : cleanSnippet));
+                System.out.println("ID: " + pageId + "\n");
+            }
+
+
+
+        } catch (JsonSyntaxException e){
+            System.out.println("Ошибка синтаксиса Json" + e.getMessage());
+        } catch (IllegalStateException e) {
+            System.out.println("Ошибка структуры JSON: " + e.getMessage());
+        } catch (NullPointerException e) {
+            System.out.println("Ошибка: отсутствуют ожидаемые данные в JSON");
+        } catch (RuntimeException e) {
+            System.out.println("Ошибка при обработке результатов: " + e.getMessage());
+        }
+
 
     }
 
