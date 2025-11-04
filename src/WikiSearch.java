@@ -20,8 +20,6 @@ import com.google.gson.JsonObject;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonSyntaxException;
 
-import java.util.IllegalFormatException;
-import java.io.UnsupportedEncodingException;
 
 public class WikiSearch {
 
@@ -94,7 +92,7 @@ public class WikiSearch {
             HttpRequest request = HttpRequest.newBuilder()
                     .uri(URI.create(url))
                     .timeout(Duration.ofSeconds(timeout))
-                    .header("User-Agent", "WikiSearchApp/1.0 (Student Project)")
+                    .header("User-Agent", "WikiSearchApp/1.0 (Student Project)") //идентификация "себя"
                     .GET()
                     .build();
 //            HttpRequest request = HttpRequest.newBuilder()
@@ -179,8 +177,6 @@ public class WikiSearch {
         } catch (RuntimeException e) {
             System.out.println("Ошибка при обработке результатов: " + e.getMessage());
         }
-
-
     }
 
     private static void articleSelection(String jsonResponse, Scanner scanner){
@@ -216,7 +212,7 @@ public class WikiSearch {
                     // формируем URL для открытия статьи
                     String articleUrl = "https://ru.wikipedia.org/w/index.php?curid=" + selectedPageId;
 
-//                openInBrowser(articleUrl);
+                openInBrowser(articleUrl);
                 } else if (choice != 0) {
                     System.out.println("Неверный номер статьи. Введите число от 1 до " + pageIds.size());
                 }
@@ -230,12 +226,32 @@ public class WikiSearch {
         } catch (NullPointerException e) {
             System.out.println("Ошибка: отсутствуют данные для выбора статьи");
         }
-
-
     }
-//    private static void openInBrowser(String url) {
-//
-//    }
+
+    private static void openInBrowser(String url) {
+        try {
+             if (Desktop.isDesktopSupported()) {
+                Desktop desktop = Desktop.getDesktop();
+
+                // поддерживает ли действие поисковик
+                if (desktop.isSupported(Desktop.Action.BROWSE)) {
+                    System.out.println("Открытие статьи.");
+                    desktop.browse(new URI(url));
+                    System.out.println("Статья открыта в браузере.");
+                    return;
+                }
+            }
+
+            // если автоматическое открытие не поддерживается -  показываем ссылку
+            System.out.println("Не удалось открыть браузер.");
+            System.out.println("Скопируйте ссылку вручную: " + url);
+
+        } catch (URISyntaxException e) {
+            System.out.println("Неверный формат URL: " + e.getMessage());
+        } catch (IOException e) {
+            System.out.println("Ошибка ввода/вывода при открытии браузера: " + e.getMessage());
+        }
+    }
 
 
 
