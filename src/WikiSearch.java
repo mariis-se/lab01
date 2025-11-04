@@ -1,3 +1,4 @@
+import java.awt.*; // класс для работы с desktop
 import java.io.IOException;
 import java.net.URLEncoder;
 import java.time.Duration;
@@ -51,10 +52,11 @@ public class WikiSearch {
 
                 System.out.println("Searching.......");
 
-                String jsonAnswer = fetchSearch(search);
-//                if (jsonAnswer != null){
-//
-//                }
+                String jsonResponse = fetchSearch(search);
+                if (jsonResponse != null){
+                    parseAndResult(jsonResponse);
+                    articleSelection(jsonResponse, scanner);
+                }
 
 
                 System.out.println("Считано: " + search);
@@ -89,12 +91,17 @@ public class WikiSearch {
             HttpClient client = HttpClient.newBuilder()
                     .connectTimeout(Duration.ofSeconds(timeout))
                     .build();
-
             HttpRequest request = HttpRequest.newBuilder()
                     .uri(URI.create(url))
                     .timeout(Duration.ofSeconds(timeout))
+                    .header("User-Agent", "WikiSearchApp/1.0 (Student Project)")
                     .GET()
                     .build();
+//            HttpRequest request = HttpRequest.newBuilder()
+//                    .uri(URI.create(url))
+//                    .timeout(Duration.ofSeconds(timeout))
+//                    .GET()
+//                    .build();
             //отправка запроса , получение ответа
             HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
 
@@ -175,6 +182,60 @@ public class WikiSearch {
 
 
     }
+
+    private static void articleSelection(String jsonResponse, Scanner scanner){
+        try {
+            // парсим JSON чтобы получить массив результатов
+            JsonObject jsonObject = gson.fromJson(jsonResponse, JsonObject.class);
+            JsonArray searchResults = jsonObject.getAsJsonObject("query").getAsJsonArray("search");
+
+            //  список для хранения ID статей
+            java.util.List<Integer> pageIds = new java.util.ArrayList<>();
+
+            // собираем все pageid из результатов
+            for (JsonElement element : searchResults) {
+                JsonObject article = element.getAsJsonObject();
+                if (article.has("pageid")) {
+                    pageIds.add(article.get("pageid").getAsInt());
+                }
+            }
+
+            if (pageIds.isEmpty()) {
+                System.out.println("Не удалось получить ID статей");
+                return;
+            }
+
+            System.out.println("choice smth(0 - skip)");
+            String input = scanner.nextLine().trim();
+
+            try {
+                int choice = Integer.parseInt(input);
+                if (choice > 0 && choice <= pageIds.size()) {
+                    int selectedPageId = pageIds.get(choice - 1);
+
+                    // формируем URL для открытия статьи
+                    String articleUrl = "https://ru.wikipedia.org/w/index.php?curid=" + selectedPageId;
+
+//                openInBrowser(articleUrl);
+                } else if (choice != 0) {
+                    System.out.println("Неверный номер статьи. Введите число от 1 до " + pageIds.size());
+                }
+            } catch (NumberFormatException e) {
+                System.out.println("Пожалуйста, введите корректное число.");
+            }
+        }catch (JsonSyntaxException e) {
+            System.out.println("Ошибка синтаксиса JSON при выборе статьи: " + e.getMessage());
+        } catch (IllegalStateException e) {
+            System.out.println("Ошибка структуры JSON при выборе статьи: " + e.getMessage());
+        } catch (NullPointerException e) {
+            System.out.println("Ошибка: отсутствуют данные для выбора статьи");
+        }
+
+
+    }
+//    private static void openInBrowser(String url) {
+//
+//    }
 
 
 
