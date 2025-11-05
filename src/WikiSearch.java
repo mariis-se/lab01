@@ -21,58 +21,13 @@ import com.google.gson.JsonElement;
 import com.google.gson.JsonSyntaxException;
 
 
-public class WikiSearch {
+class WikipediaAPI{
 
     private static final String wikiApi_URL = "https://ru.wikipedia.org/w/api.php";
     private static final int timeout = 15;
 
     private static final Gson gson = new Gson();
 
-
-    public static void main(String[] s){
-        Scanner scanner = new Scanner(System.in, StandardCharsets.UTF_8);
-        //String search = "";
-        while(true) {
-            try {
-                System.out.print("Для завершения работы программы ввелите 0 ");
-                System.out.print("Введите поисковой запрос: ");
-                String search = scanner.nextLine();
-
-                if (search.equalsIgnoreCase("0")){
-                    break;
-                }
-
-                //trim - убираем пробелы
-                if (search.trim().isEmpty()) {
-                    System.out.println("Ошибка. Пустой запрос.");
-                    continue;
-                }
-
-                System.out.println("Searching.......");
-
-                String jsonResponse = fetchSearch(search);
-                if (jsonResponse != null){
-                    parseAndResult(jsonResponse);
-                    articleSelection(jsonResponse, scanner);
-                }
-
-
-                System.out.println("Считано: " + search);
-            } catch (IOError e) {
-                System.out.println("Ошибка ввода(вывода)!");
-            } catch (IllegalFormatException e) {
-                System.out.println("Ошибка формата ввода!");
-            }
-//        finally {
-//            if (scanner != null) {
-//                scanner.close();
-//            }
-//        }
-        }
-        scanner.close();
-        System.out.println("The end of the prog");
-
-    }
 
     private static String fetchSearch(String search) {
         try{ // кодируем запрос для дальнейшей передачи в url
@@ -120,6 +75,7 @@ public class WikiSearch {
         }
         return null;
     }
+
 
     private static void parseAndResult(String jsonResponse){
         try {
@@ -178,6 +134,98 @@ public class WikiSearch {
             System.out.println("Ошибка при обработке результатов: " + e.getMessage());
         }
     }
+}
+
+
+
+class Browser{
+    private static void openInBrowser(String url) {
+        try {
+             if (Desktop.isDesktopSupported()) {
+                Desktop desktop = Desktop.getDesktop();
+
+                // поддерживает ли действие поисковик
+                if (desktop.isSupported(Desktop.Action.BROWSE)) {
+                    System.out.println("Открытие статьи.");
+                    desktop.browse(new URI(url));
+                    System.out.println("Статья открыта в браузере.");
+                    return;
+                }
+            }
+
+            // если автоматическое открытие не поддерживается -  показываем ссылку
+            System.out.println("Не удалось открыть браузер.");
+            System.out.println("Ссылка для открытия: " + url);
+
+        } catch (URISyntaxException e) {
+            System.out.println("Неверный формат URL: " + e.getMessage());
+        } catch (IOException e) {
+            System.out.println("Ошибка ввода/вывода при открытии браузера: " + e.getMessage());
+        }
+    }
+}
+
+
+public class WikiSearch {
+
+    private Browser browser;
+
+    public WikiSearch(){
+        this.browser = new Browser();
+
+    }
+
+
+
+
+    public static void main(String[] s){
+        Scanner scanner = new Scanner(System.in, StandardCharsets.UTF_8);
+        //String search = "";
+        while(true) {
+            try {
+                System.out.print("Для завершения работы программы ввелите 0 ");
+                System.out.print("Введите поисковой запрос: ");
+                String search = scanner.nextLine();
+
+                if (search.equalsIgnoreCase("0")){
+                    break;
+                }
+
+                //trim - убираем пробелы
+                if (search.trim().isEmpty()) {
+                    System.out.println("Ошибка. Пустой запрос.");
+                    continue;
+                }
+
+                System.out.println("Searching.......");
+
+                String jsonResponse = fetchSearch(search);
+                if (jsonResponse != null){
+                    parseAndResult(jsonResponse);
+                    articleSelection(jsonResponse, scanner);
+                }
+
+
+                System.out.println("Считано: " + search);
+            } catch (IOError e) {
+                System.out.println("Ошибка ввода(вывода)!");
+            } catch (IllegalFormatException e) {
+                System.out.println("Ошибка формата ввода!");
+            }
+//        finally {
+//            if (scanner != null) {
+//                scanner.close();
+//            }
+//        }
+        }
+        scanner.close();
+        System.out.println("The end of the prog");
+
+    }
+
+
+
+
 
     private static void articleSelection(String jsonResponse, Scanner scanner){
         try {
@@ -212,7 +260,7 @@ public class WikiSearch {
                     // формируем URL для открытия статьи
                     String articleUrl = "https://ru.wikipedia.org/w/index.php?curid=" + selectedPageId;
 
-                openInBrowser(articleUrl);
+//                openInBrowser(articleUrl);
                 } else if (choice != 0) {
                     System.out.println("Неверный номер статьи. Введите число от 1 до " + pageIds.size());
                 }
@@ -228,33 +276,5 @@ public class WikiSearch {
         }
     }
 }
-
-class Browser{
-    private static void openInBrowser(String url) {
-        try {
-             if (Desktop.isDesktopSupported()) {
-                Desktop desktop = Desktop.getDesktop();
-
-                // поддерживает ли действие поисковик
-                if (desktop.isSupported(Desktop.Action.BROWSE)) {
-                    System.out.println("Открытие статьи.");
-                    desktop.browse(new URI(url));
-                    System.out.println("Статья открыта в браузере.");
-                    return;
-                }
-            }
-
-            // если автоматическое открытие не поддерживается -  показываем ссылку
-            System.out.println("Не удалось открыть браузер.");
-            System.out.println("Ссылка для открытия: " + url);
-
-        } catch (URISyntaxException e) {
-            System.out.println("Неверный формат URL: " + e.getMessage());
-        } catch (IOException e) {
-            System.out.println("Ошибка ввода/вывода при открытии браузера: " + e.getMessage());
-        }
-    }
-}
-
 
 
