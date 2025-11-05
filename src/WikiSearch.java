@@ -227,7 +227,9 @@ public class WikiSearch {
             System.out.println("Ошибка: отсутствуют данные для выбора статьи");
         }
     }
+}
 
+class Browser{
     private static void openInBrowser(String url) {
         try {
              if (Desktop.isDesktopSupported()) {
@@ -244,7 +246,7 @@ public class WikiSearch {
 
             // если автоматическое открытие не поддерживается -  показываем ссылку
             System.out.println("Не удалось открыть браузер.");
-            System.out.println("Скопируйте ссылку вручную: " + url);
+            System.out.println("Ссылка для открытия: " + url);
 
         } catch (URISyntaxException e) {
             System.out.println("Неверный формат URL: " + e.getMessage());
@@ -252,8 +254,7 @@ public class WikiSearch {
             System.out.println("Ошибка ввода/вывода при открытии браузера: " + e.getMessage());
         }
     }
-
-
-
-
 }
+
+
+
