@@ -29,7 +29,29 @@ class WikipediaAPI{
     private static final Gson gson = new Gson();
 
 
-    private static String fetchSearch(String search) {
+    public String getArticleTitle(JsonObject article) {
+        return article.has("title") ? article.get("title").getAsString() : "Без названия";
+    }
+
+    public String getArticleSnippet(JsonObject article) {
+        String snippet = article.has("snippet") ? article.get("snippet").getAsString() : "";
+        String cleanSnippet = snippet.replaceAll("<[^>]+>", "");
+        if (cleanSnippet.length() > 120) {
+            cleanSnippet = cleanSnippet.substring(0, 120) + "...";
+        }
+        return cleanSnippet.isEmpty() ? "Нет описания" : cleanSnippet;
+    }
+
+    public int getArticlePageId(JsonObject article) {
+        return article.has("pageid") ? article.get("pageid").getAsInt() : -1;
+    }
+
+    public String getArticleUrl(JsonObject article) {
+        int pageId = getArticlePageId(article);
+        return "https://ru.wikipedia.org/w/index.php?curid=" + pageId;
+    }
+
+    public String fetchSearch(String search) {
         try{ // кодируем запрос для дальнейшей передачи в url
             String searchURL = URLEncoder.encode(search, StandardCharsets.UTF_8);
             String url = wikiApi_URL +
@@ -77,50 +99,31 @@ class WikipediaAPI{
     }
 
 
-    private static void parseAndResult(String jsonResponse){
+    public JsonArray getSearchResults(String jsonResponse){
         try {
             // Парсим json в объект JsonObject для удобного доступа к полям
             JsonObject jsonObject = gson.fromJson(jsonResponse, JsonObject.class);
 
             if (!jsonObject.has("query")) {
                 System.out.println("No query :(");
-                return;
+                return new JsonArray();
             }
 
             JsonObject query = jsonObject.getAsJsonObject("query");
 
             if (!query.has("search") || !query.get("search").isJsonArray()) {
                 System.out.println("По вашему запросу ничего не найдено");
-                return;
+                return new JsonArray();
             }
 
             JsonArray searchResults = query.getAsJsonArray("search");
 
             if (searchResults.isEmpty()) {
                 System.out.println("По вашему запросу ничего не найдено");
-                return;
+                return new JsonArray();
             }
 
-            System.out.println("\nНайдено статей: " + searchResults.size());
-
-            for (int i = 0; i < searchResults.size(); i++){
-                JsonObject article = searchResults.get(i).getAsJsonObject();
-
-                String title = article.has("title") ? article.get("title").getAsString() : "Без названия";
-                String snippet = article.has("snippet") ? article.get("snippet").getAsString() : "";
-                int pageId = article.has("pageid") ? article.get("pageid").getAsInt() : -1;
-
-                // очищаем сниппет от HTML тегов для отображения
-                String cleanSnippet = snippet.replaceAll("<[^>]+>", "");
-
-                // обрезка текста
-                if (cleanSnippet.length() > 120) {
-                    cleanSnippet = cleanSnippet.substring(0, 120) + "...";
-                }
-                System.out.println((i + 1) + title);
-                System.out.println((cleanSnippet.isEmpty() ? "Нет описания" : cleanSnippet));
-                System.out.println("ID: " + pageId + "\n");
-            }
+            return searchResults;
 
 
 
@@ -133,13 +136,63 @@ class WikipediaAPI{
         } catch (RuntimeException e) {
             System.out.println("Ошибка при обработке результатов: " + e.getMessage());
         }
+        return null;
     }
+
+//    public JsonArray searchResults(String jsonResponse){
+//        try {
+//            // парсим JSON чтобы получить массив результатов
+//            JsonObject jsonObject = gson.fromJson(jsonResponse, JsonObject.class);
+//            JsonArray searchResults = jsonObject.getAsJsonObject("query").getAsJsonArray("search");
+//
+//            //  список для хранения ID статей
+//            java.util.List<Integer> pageIds = new java.util.ArrayList<>();
+//
+//            // собираем все pageid из результатов
+//            for (JsonElement element : searchResults) {
+//                JsonObject article = element.getAsJsonObject();
+//                if (article.has("pageid")) {
+//                    pageIds.add(article.get("pageid").getAsInt());
+//                }
+//            }
+//
+//            if (pageIds.isEmpty()) {
+//                System.out.println("Не удалось получить ID статей");
+//                return;
+//            }
+//
+//            System.out.println("Выберите статью для открытия (0 - выход): ");
+//            String input = scanner.nextLine().trim();
+//
+//            try {
+//                int choice = Integer.parseInt(input);
+//                if (choice > 0 && choice <= pageIds.size()) {
+//                    int selectedPageId = pageIds.get(choice - 1);
+//
+//                    // формируем URL для открытия статьи
+//                    String articleUrl = "https://ru.wikipedia.org/w/index.php?curid=" + selectedPageId;
+//
+////                openInBrowser(articleUrl);
+//                } else if (choice != 0) {
+//                    System.out.println("Неверный номер статьи. Введите число от 1 до " + pageIds.size());
+//                }
+//            } catch (NumberFormatException e) {
+//                System.out.println("Пожалуйста, введите корректное число.");
+//            }
+//        }catch (JsonSyntaxException e) {
+//            System.out.println("Ошибка синтаксиса JSON при выборе статьи: " + e.getMessage());
+//        } catch (IllegalStateException e) {
+//            System.out.println("Ошибка структуры JSON при выборе статьи: " + e.getMessage());
+//        } catch (NullPointerException e) {
+//            System.out.println("Ошибка: отсутствуют данные для выбора статьи");
+//        }
+//    }
 }
 
 
 
 class Browser{
-    private static void openInBrowser(String url) {
+    public void openInBrowser(String url) {
         try {
              if (Desktop.isDesktopSupported()) {
                 Desktop desktop = Desktop.getDesktop();
@@ -168,17 +221,22 @@ class Browser{
 
 public class WikiSearch {
 
-    private Browser browser;
+    private final Browser browser;
+    private final WikipediaAPI wikipediaAPI;
+
 
     public WikiSearch(){
+        this.wikipediaAPI = new WikipediaAPI();
         this.browser = new Browser();
-
     }
 
-
-
-
     public static void main(String[] s){
+        WikiSearch app = new WikiSearch();
+        app.run();
+    }
+
+    public void run(){
+//        WikiSearch app = new WikiSearch();
         Scanner scanner = new Scanner(System.in, StandardCharsets.UTF_8);
         //String search = "";
         while(true) {
@@ -199,10 +257,19 @@ public class WikiSearch {
 
                 System.out.println("Searching.......");
 
-                String jsonResponse = fetchSearch(search);
-                if (jsonResponse != null){
-                    parseAndResult(jsonResponse);
-                    articleSelection(jsonResponse, scanner);
+//                String jsonResponse = wikipediaAPI.fetchSearch(search);
+//                if (jsonResponse != null){
+//                    parseAndResult(jsonResponse);
+//                    articleSelection(jsonResponse, scanner);
+//                }
+
+                String jsonResponse = wikipediaAPI.fetchSearch(search);
+                if (jsonResponse != null) {
+                    JsonArray searchResults = wikipediaAPI.getSearchResults(jsonResponse);
+                    if (searchResults.size() > 0) {
+                        displayResults(searchResults);
+                        articleSelection(searchResults, scanner);
+                    }
                 }
 
 
@@ -223,57 +290,73 @@ public class WikiSearch {
 
     }
 
+    private void displayResults(JsonArray searchResults) {
+        System.out.println("\nНайдено статей: " + searchResults.size());
+
+        for (int i = 0; i < searchResults.size(); i++) {
+            JsonObject article = searchResults.get(i).getAsJsonObject();
+            String title = wikipediaAPI.getArticleTitle(article);
+            String snippet = wikipediaAPI.getArticleSnippet(article);
+            int pageId = wikipediaAPI.getArticlePageId(article);
+
+            System.out.println((i + 1) + ". " + title);
+            System.out.println("   " + snippet);
+            System.out.println("   ID: " + pageId + "\n");
+        }
+    }
 
 
 
 
-    private static void articleSelection(String jsonResponse, Scanner scanner){
+
+    private void articleSelection(JsonArray searchResults, Scanner scanner){
         try {
-            // парсим JSON чтобы получить массив результатов
-            JsonObject jsonObject = gson.fromJson(jsonResponse, JsonObject.class);
-            JsonArray searchResults = jsonObject.getAsJsonObject("query").getAsJsonArray("search");
+//            // парсим JSON чтобы получить массив результатов
+//            JsonObject jsonObject = gson.fromJson(jsonResponse, JsonObject.class);
+//            JsonArray searchResults = jsonObject.getAsJsonObject("query").getAsJsonArray("search");
+//
+//            //  список для хранения ID статей
+//            java.util.List<Integer> pageIds = new java.util.ArrayList<>();
+//
+//            // собираем все pageid из результатов
+//            for (JsonElement element : searchResults) {
+//                JsonObject article = element.getAsJsonObject();
+//                if (article.has("pageid")) {
+//                    pageIds.add(article.get("pageid").getAsInt());
+//                }
+//            }
+//
+//            if (pageIds.isEmpty()) {
+//                System.out.println("Не удалось получить ID статей");
+//                return;
+//            }
 
-            //  список для хранения ID статей
-            java.util.List<Integer> pageIds = new java.util.ArrayList<>();
-
-            // собираем все pageid из результатов
-            for (JsonElement element : searchResults) {
-                JsonObject article = element.getAsJsonObject();
-                if (article.has("pageid")) {
-                    pageIds.add(article.get("pageid").getAsInt());
-                }
-            }
-
-            if (pageIds.isEmpty()) {
-                System.out.println("Не удалось получить ID статей");
-                return;
-            }
-
-            System.out.println("choice smth(0 - skip)");
+            System.out.println("Выберите статью для открытия (0 - выход): ");
             String input = scanner.nextLine().trim();
 
             try {
                 int choice = Integer.parseInt(input);
-                if (choice > 0 && choice <= pageIds.size()) {
-                    int selectedPageId = pageIds.get(choice - 1);
+                if (choice > 0 && choice <= searchResults.size()) {
+                    JsonObject selectedArticle = searchResults.get(choice - 1).getAsJsonObject();
+                    String articleUrl = wikipediaAPI.getArticleUrl(selectedArticle);
+                    browser.openInBrowser(articleUrl);
+//                    int selectedPageId = searchResults.get(choice - 1);
 
-                    // формируем URL для открытия статьи
-                    String articleUrl = "https://ru.wikipedia.org/w/index.php?curid=" + selectedPageId;
+//                    // формируем URL для открытия статьи
+//                    String articleUrl = "https://ru.wikipedia.org/w/index.php?curid=" + selectedPageId;
+//
+////                openInBrowser(articleUrl);
 
-//                openInBrowser(articleUrl);
                 } else if (choice != 0) {
-                    System.out.println("Неверный номер статьи. Введите число от 1 до " + pageIds.size());
+                    System.out.println("Неверный номер статьи. Введите число от 1 до " + searchResults.size());
                 }
             } catch (NumberFormatException e) {
                 System.out.println("Пожалуйста, введите корректное число.");
             }
-        }catch (JsonSyntaxException e) {
-            System.out.println("Ошибка синтаксиса JSON при выборе статьи: " + e.getMessage());
-        } catch (IllegalStateException e) {
-            System.out.println("Ошибка структуры JSON при выборе статьи: " + e.getMessage());
-        } catch (NullPointerException e) {
-            System.out.println("Ошибка: отсутствуют данные для выбора статьи");
+        }catch (RuntimeException e) {
+            System.out.println("\"Ошибка при выборе статьи: " + e.getMessage());
         }
+
     }
 }
 
