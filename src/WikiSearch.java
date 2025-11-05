@@ -21,7 +21,7 @@ import com.google.gson.JsonElement;
 import com.google.gson.JsonSyntaxException;
 
 
-class WikipediaAPI{
+class WikipediaAPI {
 
     private static final String wikiApi_URL = "https://ru.wikipedia.org/w/api.php";
     private static final int timeout = 15;
@@ -52,7 +52,7 @@ class WikipediaAPI{
     }
 
     public String fetchSearch(String search) {
-        try{ // кодируем запрос для дальнейшей передачи в url
+        try { // кодируем запрос для дальнейшей передачи в url
             String searchURL = URLEncoder.encode(search, StandardCharsets.UTF_8);
             String url = wikiApi_URL +
                     "?action=query" +
@@ -72,11 +72,6 @@ class WikipediaAPI{
                     .header("User-Agent", "WikiSearchApp/1.0 (Student Project)") //идентификация "себя"
                     .GET()
                     .build();
-//            HttpRequest request = HttpRequest.newBuilder()
-//                    .uri(URI.create(url))
-//                    .timeout(Duration.ofSeconds(timeout))
-//                    .GET()
-//                    .build();
             //отправка запроса , получение ответа
             HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
 
@@ -86,7 +81,7 @@ class WikipediaAPI{
                 System.out.println("Ошибка HTTP: " + response.statusCode());
             }
 
-        } catch (UnsupportedEncodingException e){
+        } catch (UnsupportedEncodingException e) {
             System.out.println("Ошибка кодирования запроса " + e.getMessage());
         } catch (IOException e) {
             System.out.println("Ошибка сети " + e.getMessage());
@@ -98,8 +93,7 @@ class WikipediaAPI{
         return null;
     }
 
-
-    public JsonArray getSearchResults(String jsonResponse){
+    public JsonArray getSearchResults(String jsonResponse) {
         try {
             // Парсим json в объект JsonObject для удобного доступа к полям
             JsonObject jsonObject = gson.fromJson(jsonResponse, JsonObject.class);
@@ -125,9 +119,7 @@ class WikipediaAPI{
 
             return searchResults;
 
-
-
-        } catch (JsonSyntaxException e){
+        } catch (JsonSyntaxException e) {
             System.out.println("Ошибка синтаксиса Json" + e.getMessage());
         } catch (IllegalStateException e) {
             System.out.println("Ошибка структуры JSON: " + e.getMessage());
@@ -138,59 +130,7 @@ class WikipediaAPI{
         }
         return null;
     }
-
-//    public JsonArray searchResults(String jsonResponse){
-//        try {
-//            // парсим JSON чтобы получить массив результатов
-//            JsonObject jsonObject = gson.fromJson(jsonResponse, JsonObject.class);
-//            JsonArray searchResults = jsonObject.getAsJsonObject("query").getAsJsonArray("search");
-//
-//            //  список для хранения ID статей
-//            java.util.List<Integer> pageIds = new java.util.ArrayList<>();
-//
-//            // собираем все pageid из результатов
-//            for (JsonElement element : searchResults) {
-//                JsonObject article = element.getAsJsonObject();
-//                if (article.has("pageid")) {
-//                    pageIds.add(article.get("pageid").getAsInt());
-//                }
-//            }
-//
-//            if (pageIds.isEmpty()) {
-//                System.out.println("Не удалось получить ID статей");
-//                return;
-//            }
-//
-//            System.out.println("Выберите статью для открытия (0 - выход): ");
-//            String input = scanner.nextLine().trim();
-//
-//            try {
-//                int choice = Integer.parseInt(input);
-//                if (choice > 0 && choice <= pageIds.size()) {
-//                    int selectedPageId = pageIds.get(choice - 1);
-//
-//                    // формируем URL для открытия статьи
-//                    String articleUrl = "https://ru.wikipedia.org/w/index.php?curid=" + selectedPageId;
-//
-////                openInBrowser(articleUrl);
-//                } else if (choice != 0) {
-//                    System.out.println("Неверный номер статьи. Введите число от 1 до " + pageIds.size());
-//                }
-//            } catch (NumberFormatException e) {
-//                System.out.println("Пожалуйста, введите корректное число.");
-//            }
-//        }catch (JsonSyntaxException e) {
-//            System.out.println("Ошибка синтаксиса JSON при выборе статьи: " + e.getMessage());
-//        } catch (IllegalStateException e) {
-//            System.out.println("Ошибка структуры JSON при выборе статьи: " + e.getMessage());
-//        } catch (NullPointerException e) {
-//            System.out.println("Ошибка: отсутствуют данные для выбора статьи");
-//        }
-//    }
 }
-
-
-
 class Browser{
     public void openInBrowser(String url) {
         try {
@@ -224,7 +164,6 @@ public class WikiSearch {
     private final Browser browser;
     private final WikipediaAPI wikipediaAPI;
 
-
     public WikiSearch(){
         this.wikipediaAPI = new WikipediaAPI();
         this.browser = new Browser();
@@ -238,7 +177,6 @@ public class WikiSearch {
     public void run(){
 //        WikiSearch app = new WikiSearch();
         Scanner scanner = new Scanner(System.in, StandardCharsets.UTF_8);
-        //String search = "";
         while(true) {
             try {
                 System.out.print("Для завершения работы программы ввелите 0 ");
@@ -257,12 +195,6 @@ public class WikiSearch {
 
                 System.out.println("Searching.......");
 
-//                String jsonResponse = wikipediaAPI.fetchSearch(search);
-//                if (jsonResponse != null){
-//                    parseAndResult(jsonResponse);
-//                    articleSelection(jsonResponse, scanner);
-//                }
-
                 String jsonResponse = wikipediaAPI.fetchSearch(search);
                 if (jsonResponse != null) {
                     JsonArray searchResults = wikipediaAPI.getSearchResults(jsonResponse);
@@ -272,22 +204,15 @@ public class WikiSearch {
                     }
                 }
 
-
                 System.out.println("Считано: " + search);
             } catch (IOError e) {
                 System.out.println("Ошибка ввода(вывода)!");
             } catch (IllegalFormatException e) {
                 System.out.println("Ошибка формата ввода!");
             }
-//        finally {
-//            if (scanner != null) {
-//                scanner.close();
-//            }
-//        }
         }
         scanner.close();
         System.out.println("The end of the prog");
-
     }
 
     private void displayResults(JsonArray searchResults) {
@@ -304,10 +229,6 @@ public class WikiSearch {
             System.out.println("   ID: " + pageId + "\n");
         }
     }
-
-
-
-
 
     private void articleSelection(JsonArray searchResults, Scanner scanner){
         try {
@@ -340,13 +261,6 @@ public class WikiSearch {
                     JsonObject selectedArticle = searchResults.get(choice - 1).getAsJsonObject();
                     String articleUrl = wikipediaAPI.getArticleUrl(selectedArticle);
                     browser.openInBrowser(articleUrl);
-//                    int selectedPageId = searchResults.get(choice - 1);
-
-//                    // формируем URL для открытия статьи
-//                    String articleUrl = "https://ru.wikipedia.org/w/index.php?curid=" + selectedPageId;
-//
-////                openInBrowser(articleUrl);
-
                 } else if (choice != 0) {
                     System.out.println("Неверный номер статьи. Введите число от 1 до " + searchResults.size());
                 }
@@ -359,5 +273,6 @@ public class WikiSearch {
 
     }
 }
+
 
 
