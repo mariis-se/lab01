@@ -51,7 +51,7 @@ class WikipediaAPI {
         return "https://ru.wikipedia.org/w/index.php?curid=" + pageId;
     }
 
-    public String fetchSearch(String search) {
+    public String fetchSearch(String search) { //http запрос к wiki api для поиска статей
         try { // кодируем запрос для дальнейшей передачи в url
             String searchURL = URLEncoder.encode(search, StandardCharsets.UTF_8);
             String url = wikiApi_URL +
@@ -62,7 +62,6 @@ class WikipediaAPI {
                     "&srsearch=" + searchURL +
                     "&srlimit=10"; //ограничение по кол результатов 10
             // создаем http клиент с таймаутом
-
             HttpClient client = HttpClient.newBuilder()
                     .connectTimeout(Duration.ofSeconds(timeout))
                     .build();
@@ -80,7 +79,6 @@ class WikipediaAPI {
             } else {
                 System.out.println("Ошибка HTTP: " + response.statusCode());
             }
-
         } catch (UnsupportedEncodingException e) {
             System.out.println("Ошибка кодирования запроса " + e.getMessage());
         } catch (IOException e) {
@@ -88,12 +86,12 @@ class WikipediaAPI {
         } catch (InterruptedException e) {
             System.out.println("Запрос прерван " + e.getMessage());
         } catch (IllegalArgumentException e) {
-            System.out.println("Неверный URL" + e.getMessage());
+            System.out.println("Неверный URL " + e.getMessage());
         }
         return null;
     }
 
-    public JsonArray getSearchResults(String jsonResponse) {
+    public JsonArray getSearchResults(String jsonResponse) { //парсим json, получаем массив результатов поиска
         try {
             // Парсим json в объект JsonObject для удобного доступа к полям
             JsonObject jsonObject = gson.fromJson(jsonResponse, JsonObject.class);
@@ -131,6 +129,7 @@ class WikipediaAPI {
         return null;
     }
 }
+
 class Browser{
     public void openInBrowser(String url) {
         try {
@@ -179,7 +178,7 @@ public class WikiSearch {
         Scanner scanner = new Scanner(System.in, StandardCharsets.UTF_8);
         while(true) {
             try {
-                System.out.print("Для завершения работы программы ввелите 0 ");
+                System.out.println("!! Для завершения работы программы введите 0 !!");
                 System.out.print("Введите поисковой запрос: ");
                 String search = scanner.nextLine();
 
@@ -193,7 +192,7 @@ public class WikiSearch {
                     continue;
                 }
 
-                System.out.println("Searching.......");
+                System.out.println("Поиск.......");
 
                 String jsonResponse = wikipediaAPI.fetchSearch(search);
                 if (jsonResponse != null) {
@@ -212,7 +211,7 @@ public class WikiSearch {
             }
         }
         scanner.close();
-        System.out.println("The end of the prog");
+        System.out.println("Конец. Спасибо за обращение!)");
     }
 
     private void displayResults(JsonArray searchResults) {
@@ -232,29 +231,8 @@ public class WikiSearch {
 
     private void articleSelection(JsonArray searchResults, Scanner scanner){
         try {
-//            // парсим JSON чтобы получить массив результатов
-//            JsonObject jsonObject = gson.fromJson(jsonResponse, JsonObject.class);
-//            JsonArray searchResults = jsonObject.getAsJsonObject("query").getAsJsonArray("search");
-//
-//            //  список для хранения ID статей
-//            java.util.List<Integer> pageIds = new java.util.ArrayList<>();
-//
-//            // собираем все pageid из результатов
-//            for (JsonElement element : searchResults) {
-//                JsonObject article = element.getAsJsonObject();
-//                if (article.has("pageid")) {
-//                    pageIds.add(article.get("pageid").getAsInt());
-//                }
-//            }
-//
-//            if (pageIds.isEmpty()) {
-//                System.out.println("Не удалось получить ID статей");
-//                return;
-//            }
-
-            System.out.println("Выберите статью для открытия (0 - выход): ");
+            System.out.println("Выберите статью для открытия (0 - пропуск): ");
             String input = scanner.nextLine().trim();
-
             try {
                 int choice = Integer.parseInt(input);
                 if (choice > 0 && choice <= searchResults.size()) {
@@ -270,7 +248,6 @@ public class WikiSearch {
         }catch (RuntimeException e) {
             System.out.println("\"Ошибка при выборе статьи: " + e.getMessage());
         }
-
     }
 }
 
