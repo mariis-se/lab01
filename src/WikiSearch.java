@@ -8,26 +8,21 @@ import java.util.IllegalFormatException;
 import java.io.UnsupportedEncodingException;
 import java.net.URISyntaxException;
 import java.nio.charset.StandardCharsets;
-
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.net.URI;
-
 import com.google.gson.Gson;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonSyntaxException;
 
-
 class WikipediaAPI {
 
     private static final String wikiApi_URL = "https://ru.wikipedia.org/w/api.php";
     private static final int timeout = 15;
-
     private static final Gson gson = new Gson();
-
 
     public String getArticleTitle(JsonObject article) {
         return article.has("title") ? article.get("title").getAsString() : "Без названия";
@@ -102,19 +97,16 @@ class WikipediaAPI {
             }
 
             JsonObject query = jsonObject.getAsJsonObject("query");
-
             if (!query.has("search") || !query.get("search").isJsonArray()) {
                 System.out.println("По вашему запросу ничего не найдено");
                 return new JsonArray();
             }
 
             JsonArray searchResults = query.getAsJsonArray("search");
-
             if (searchResults.isEmpty()) {
                 System.out.println("По вашему запросу ничего не найдено");
                 return new JsonArray();
             }
-
             return searchResults;
 
         } catch (JsonSyntaxException e) {
@@ -135,7 +127,6 @@ class Browser{
         try {
              if (Desktop.isDesktopSupported()) {
                 Desktop desktop = Desktop.getDesktop();
-
                 // поддерживает ли действие поисковик
                 if (desktop.isSupported(Desktop.Action.BROWSE)) {
                     System.out.println("Открытие статьи.");
@@ -144,11 +135,9 @@ class Browser{
                     return;
                 }
             }
-
             // если автоматическое открытие не поддерживается -  показываем ссылку
             System.out.println("Не удалось открыть браузер.");
             System.out.println("Ссылка для открытия: " + url);
-
         } catch (URISyntaxException e) {
             System.out.println("Неверный формат URL: " + e.getMessage());
         } catch (IOException e) {
@@ -159,10 +148,8 @@ class Browser{
 
 
 public class WikiSearch {
-
     private final Browser browser;
     private final WikipediaAPI wikipediaAPI;
-
     public WikiSearch(){
         this.wikipediaAPI = new WikipediaAPI();
         this.browser = new Browser();
@@ -185,15 +172,12 @@ public class WikiSearch {
                 if (search.equalsIgnoreCase("0")){
                     break;
                 }
-
                 //trim - убираем пробелы
                 if (search.trim().isEmpty()) {
                     System.out.println("Ошибка. Пустой запрос.");
                     continue;
                 }
-
                 System.out.println("Поиск.......");
-
                 String jsonResponse = wikipediaAPI.fetchSearch(search);
                 if (jsonResponse != null) {
                     JsonArray searchResults = wikipediaAPI.getSearchResults(jsonResponse);
@@ -202,7 +186,6 @@ public class WikiSearch {
                         articleSelection(searchResults, scanner);
                     }
                 }
-
                 System.out.println("Считано: " + search);
             } catch (IOError e) {
                 System.out.println("Ошибка ввода(вывода)!");
